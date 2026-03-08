@@ -1,13 +1,15 @@
 package Jaikin;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import javax.swing.*;
 
-public class JaikinPanel extends JPanel implements MouseListener, KeyListener {
+public class JaikinPanel extends JPanel implements MouseListener, MouseMotionListener, KeyListener {
+
     private ArrayList<Point2D> points = new ArrayList<>();
     private ArrayList<Point2D> smoothedPoints = new ArrayList<>();
+    private Point2D draggedPoint = null;
     private boolean animating = false;
     private int step = 0;
     private long timer = 0;
@@ -18,6 +20,7 @@ public class JaikinPanel extends JPanel implements MouseListener, KeyListener {
         setPreferredSize(new Dimension(800, 600));
         setBackground(Color.BLACK);
         addMouseListener(this);
+        addMouseMotionListener(this);
         addKeyListener(this);
         setFocusable(true);
         timer = System.currentTimeMillis();
@@ -52,12 +55,6 @@ public class JaikinPanel extends JPanel implements MouseListener, KeyListener {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Draw original points as small circles
-        g2d.setColor(Color.RED);
-        for (Point2D point : points) {
-            g2d.drawOval((int) (point.x - 5), (int) (point.y - 5), 10, 10);
-        }
-
         // Draw smoothed curve or line
         if (points.size() == 2) {
             g2d.setColor(Color.YELLOW);
@@ -75,10 +72,16 @@ public class JaikinPanel extends JPanel implements MouseListener, KeyListener {
             }
         }
 
+        // Draw original points as small circles
+        g2d.setColor(Color.RED);
+        for (Point2D point : points) {
+            g2d.drawOval((int) (point.x - 5), (int) (point.y - 5), 10, 10);
+        }
+
         // GUI hints
         g2d.setColor(Color.WHITE);
         g2d.setFont(new Font("Arial", Font.PLAIN, 14));
-        String hint = "Click to add points | Enter to start animation | D to clear | ESC to exit";
+        String hint = "Click to add | Drag points to move | Enter to start animation | D to clear | ESC to exit";
         if (points.isEmpty()) {
             hint = "Please draw points first | ESC to exit";
         }
@@ -91,10 +94,36 @@ public class JaikinPanel extends JPanel implements MouseListener, KeyListener {
 
     @Override
     public void mousePressed(MouseEvent e) {
+
         if (e.getButton() == MouseEvent.BUTTON1) {
+            // Check if we are clicking on an existing point to drag it
+            for (Point2D p : points) {
+                if (Math.hypot(p.x - e.getX(), p.y - e.getY()) <= 10) {
+                    draggedPoint = p;
+                    return;
+                }
+            }
+
             points.add(new Point2D(e.getX(), e.getY()));
             updateSmoothedPoints();
             repaint();
+        }
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        if (draggedPoint != null) {
+            draggedPoint.x = e.getX();
+            draggedPoint.y = e.getY();
+            updateSmoothedPoints();
+            repaint();
+        }
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            draggedPoint = null;
         }
     }
 
@@ -106,9 +135,6 @@ public class JaikinPanel extends JPanel implements MouseListener, KeyListener {
                 step = 0;
                 timer = System.currentTimeMillis();
                 updateSmoothedPoints();
-            } else if (points.size() == 0) {
-                // Nothing happens, but we can show message (it's already handled in
-                // paintComponent hint)
             }
         }
 
@@ -121,27 +147,4 @@ public class JaikinPanel extends JPanel implements MouseListener, KeyListener {
         }
     }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-    }
 }
