@@ -13,6 +13,7 @@ public class JaikinPanel extends JPanel implements MouseListener, MouseMotionLis
     private boolean animating = false;
     private int step = 0;
     private long timer = 0;
+    private Timer animationTimer;
     private static final int MAX_STEPS = 7;
     private static final int ANIMATION_DELAY_MS = 500;
 
@@ -25,7 +26,8 @@ public class JaikinPanel extends JPanel implements MouseListener, MouseMotionLis
         setFocusable(true);
         timer = System.currentTimeMillis();
 
-        Timer animationTimer = new Timer(16, e -> {
+        // FIXED: Now we are using the instance variable!
+        animationTimer = new Timer(16, e -> {
             if (animating) {
                 if (System.currentTimeMillis() > timer + ANIMATION_DELAY_MS) {
                     step++;
@@ -144,6 +146,12 @@ public class JaikinPanel extends JPanel implements MouseListener, MouseMotionLis
             points.clear();
             smoothedPoints.clear();
             repaint();
+        }
+    }
+
+    public void cleanup() {
+        if (animationTimer != null && animationTimer.isRunning()) {
+            animationTimer.stop();
         }
     }
 
